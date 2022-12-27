@@ -1,0 +1,33 @@
+- name: Import List of medias in the VOD Server (PLAY1)
+  hosts: "{{ hosts_list }}"
+  vars:
+    ansible_user: "{{ user }}"
+    hosts_list: localhost
+    import_medias_file: ""
+    import_series_file: ""
+    media_film: {}
+    media_serie: {}
+    serie: {}
+    media_type: ""
+  tasks:
+    - name: get informations about import media file
+      shell: "cat {{ import_medias_file }}" 
+      register: medias
+      when: import_medias_file is defined and import_medias_file !=""
+    
+    - name: get informations about import serie file
+      shell: "cat {{ import_series_file }}" 
+      register: series
+      when: import_series_file is defined and import_series_file !=""
+
+    - name: extract list of medias records to import
+      set_fact: 
+        import_medias: "{{ medias.stout_lines }}"
+      when: medias is defined
+    
+    - name: extract list of series records to import
+      set_fact: 
+        import_medias: "{{ series.stout_lines }}"
+      when: series is defined
+    
+    - name: 

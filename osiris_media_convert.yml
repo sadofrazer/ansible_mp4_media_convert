@@ -1,5 +1,6 @@
 - name: Convert Osiris VOD Medias to the correct format (PLAY1)
   hosts: "{{ hosts_list }}"
+  become: true
   vars:
     ansible_user: "{{ user }}"
     hosts_list: all
