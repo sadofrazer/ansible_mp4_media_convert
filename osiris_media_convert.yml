@@ -1,0 +1,31 @@
+- name: Convert Osiris VOD Medias to the correct format (PLAY1)
+  hosts: "{{ hosts_list }}"
+  vars:
+    ansible_user: "{{ user }}"
+    hosts_list: all
+    src_medias_folder: ""
+    dest_medias_folder: ""
+    medias_patterns: "*.mp4"
+    remove_original: false
+    media_type: ""
+  tasks:
+
+    - name: verify if necesasry variables is defined
+      fail: 
+        msg: "Merci de définir les variables src et dest des différents médias"
+      when: ((src_medias_folder is undefined and dest_medias_folder is undefined) or (src_medias_folder == "" and dest_medias_folder == ""))
+    
+    - name: create list of medias presents in the input folder
+      ansible.builtin.find:
+        paths: "{{ src_medias_folder }}"
+        patterns: "{{ medias_patterns }}"
+        recurse: yes
+      register: medias
+      when: src_medias_folder is defined and src_medias_folder !=""
+
+    - name: convert and move medias files
+      include_tasks: convert_media.yml
+      loop: "{{ medias.files }}"
+    
+        
+

@@ -1,0 +1,97 @@
+- name: get mediaFilename name
+  set_fact:
+    n: "{{ ((item.path | split('/')) | length) | int }}"
+
+- name: get mediaFile
+  set_fact:
+    mediaFile: "{{ (item.path | split('/'))[n | int -1] }}"
+
+- name: get mediaFilename name
+  set_fact:
+    mediaFilename: "{{ (mediaFile | split('.'))[0] }}"
+  
+- name: get serie folder
+  set_fact:
+    serieName: "{{ (item.path | split('/'))[n | int - 2] }}"
+  when: (media_type is defined and media_type == 'serie')
+  
+- name: set output folder for film
+  set_fact:
+    output_folder: "{{ dest_medias_folder }}/{{ mediaFilename }}"
+  when: media_type is defined and media_type == 'film'
+
+- name: set output folder for series
+  set_fact:
+    output_folder: "{{ dest_medias_folder }}/{{ serieName }}"
+  when: (media_type is defined and media_type == 'serie') and (serieName is defined and serieName !="")
+
+- name: create the mediaFile folder
+  ansible.builtin.file:
+    path: "{{ dest_medias_folder }}/{{ mediaFilename }}"
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user }}'
+  when: media_type is defined and media_type == 'film'
+
+- name: create the serie folder
+  ansible.builtin.file:
+    path: "{{ dest_medias_folder }}/{{ serieName }}"
+    state: directory
+    mode: '0755'
+    owner: '{{ ansible_user }}'
+  when: (media_type is defined and media_type == 'serie') and (serieName is defined and serieName !="")
+
+- name: convert media
+  ignore_errors: yes
+  shell: "ffmpeg -i {{ item.path }}  -c:v h264 -c:a aac -y {{ output_folder }}/{{ mediaFilename }}.mp4"
+  register: convert_output
+
+- name: create output log file if success for films
+  lineinfile:
+    path: "~/media_convert_films_output.txt"
+    regexp: '^{{ item.path }}'
+    line: "{{ item.path }}: {{ mediaFilename }} | {{ output_folder }}/{{ mediaFilename }}.mp4 | OK"
+    create: true
+    mode: '0755'
+    owner: '{{ ansible_user }}'
+  when: (not (convert_output.failed is defined and convert_output.failed)) and media_type == 'film'
+  delegate_to: localhost
+
+- name: create output log file if failed for films
+  lineinfile:
+    path: "~/media_convert_films_output.txt"
+    regexp: '^{{ item.path }}'
+    line: "{{ item.path }}: NOK | {{ convert_output.stderr_lines[convert_output.stderr_lines | length - 2] }}"
+    create: true
+    mode: '0755'
+    owner: '{{ ansible_user }}'
+  when: (convert_output.failed is defined and convert_output.failed) and media_type == 'film'
+  delegate_to: localhost
+
+- name: create output log file if success for serie
+  lineinfile:
+    path: "~/media_convert_series_output.txt"
+    regexp: '^{{ item.path }}'
+    line: "{{ item.path }}: {{ serieName}} | {{ mediaFilename }} | {{ output_folder }}/{{ mediaFilename }}.mp4 | OK"
+    create: true
+    mode: '0755'
+    owner: '{{ ansible_user }}'
+  when: (not (convert_output.failed is defined and convert_output.failed)) and media_type == 'serie'
+  delegate_to: localhost
+
+- name: create output log file if failed for series
+  lineinfile:
+    path: "~/media_convert_series_output.txt"
+    regexp: '^{{ item.path }}'
+    line: "{{ item.path }}: NOK | {{ convert_output.stderr_lines[convert_output.stderr_lines | length - 1] }}"
+    create: true
+    mode: '0755'
+    owner: '{{ ansible_user }}'
+  when: (convert_output.failed is defined and convert_output.failed) and media_type == 'serie'
+  delegate_to: localhost
+
+- name: remove original mediafile
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  when: remove_original
