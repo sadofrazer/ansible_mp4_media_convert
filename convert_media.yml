@@ -41,7 +41,7 @@
     owner: '{{ ansible_user }}'
   when: (media_type is defined and media_type == 'serie') and (serieName is defined and serieName !="")
 
-- name: convert media
+- name: "convert media {{ item.path }}"
   ignore_errors: yes
   shell: "ffmpeg -i {{ item.path }}  -c:v h264 -c:a aac -y {{ output_folder }}/{{ mediaFilename }}.mp4"
   register: convert_output
@@ -90,8 +90,8 @@
   when: (convert_output.failed is defined and convert_output.failed) and media_type == 'serie'
   delegate_to: localhost
 
-- name: remove original mediafile
+- name: "remove original mediafile {{ item.path }}"
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
-  when: remove_original
+  when: remove_original and  (not (convert_output.failed is defined and convert_output.failed))
