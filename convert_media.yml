@@ -43,7 +43,7 @@
 
 
 - name: "move original mediafile {{ mediaFile }}"
-  shell: "mv {{ item.path }} {{ output_folder }}/{{ mediaFilename }}.mp4"
+  shell: "mv '{{ item.path }}' '{{ output_folder }}/{{ mediaFilename }}.mp4' "
   when: output_folder is defined
 
 
