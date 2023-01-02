@@ -41,57 +41,63 @@
     owner: '{{ ansible_user }}'
   when: (media_type is defined and media_type == 'serie') and (serieName is defined and serieName !="")
 
-- name: "convert media {{ mediaFile }}"
-  ignore_errors: yes
-  shell: "ffmpeg -i {{ item.path }} -vcodec libx264 -maxrate 8000k -bufsize 1000K -minrate 10k -crf 24 -preset slow -ab 192k -y {{ output_folder }}/{{ mediaFilename }}.mp4 "
-  register: convert_output
 
-- name: create output log file if success for films
-  lineinfile:
-    path: "~/media_convert_films_output.txt"
-    regexp: '^{{ item.path }}'
-    line: "{{ item.path }}: {{ mediaFilename }} | {{ output_folder }}/{{ mediaFilename }}.mp4 | OK"
-    create: true
-    mode: '0755'
-    owner: '{{ ansible_user }}'
-  when: (not (convert_output.failed is defined and convert_output.failed)) and media_type == 'film'
-  delegate_to: localhost
+- name: "move original mediafile {{ mediaFile }}"
+  shell: "mv {{ item.path }} {{ output_folder }}/{{ mediaFilename }}.mp4"
+  when: output_folder is defined
 
-- name: create output log file if failed for films
-  lineinfile:
-    path: "~/media_convert_films_output.txt"
-    regexp: '^{{ item.path }}'
-    line: "{{ item.path }}: NOK | {{ convert_output.stderr_lines[convert_output.stderr_lines | length - 2] }}"
-    create: true
-    mode: '0755'
-    owner: '{{ ansible_user }}'
-  when: (convert_output.failed is defined and convert_output.failed) and media_type == 'film'
-  delegate_to: localhost
 
-- name: create output log file if success for serie
-  lineinfile:
-    path: "~/media_convert_series_output.txt"
-    regexp: '^{{ item.path }}'
-    line: "{{ item.path }}: {{ serieName}} | {{ mediaFilename }} | {{ output_folder }}/{{ mediaFilename }}.mp4 | OK"
-    create: true
-    mode: '0755'
-    owner: '{{ ansible_user }}'
-  when: (not (convert_output.failed is defined and convert_output.failed)) and media_type == 'serie'
-  delegate_to: localhost
+# - name: "convert media {{ mediaFile }}"
+#   ignore_errors: yes
+#   shell: "ffmpeg -i {{ item.path }} -vcodec libx264 -maxrate 8000k -bufsize 1000K -minrate 10k -crf 24 -preset slow -ab 192k -y {{ output_folder }}/{{ mediaFilename }}.mp4 "
+#   register: convert_output
 
-- name: create output log file if failed for series
-  lineinfile:
-    path: "~/media_convert_series_output.txt"
-    regexp: '^{{ item.path }}'
-    line: "{{ item.path }}: NOK | {{ convert_output.stderr_lines[convert_output.stderr_lines | length - 1] }}"
-    create: true
-    mode: '0755'
-    owner: '{{ ansible_user }}'
-  when: (convert_output.failed is defined and convert_output.failed) and media_type == 'serie'
-  delegate_to: localhost
+# - name: create output log file if success for films
+#   lineinfile:
+#     path: "~/media_convert_films_output.txt"
+#     regexp: '^{{ item.path }}'
+#     line: "{{ item.path }}: {{ mediaFilename }} | {{ output_folder }}/{{ mediaFilename }}.mp4 | OK"
+#     create: true
+#     mode: '0755'
+#     owner: '{{ ansible_user }}'
+#   when: (not (convert_output.failed is defined and convert_output.failed)) and media_type == 'film'
+#   delegate_to: localhost
 
-- name: "remove original mediafile {{ item.path }}"
-  ansible.builtin.file:
-    path: "{{ item.path }}"
-    state: absent
-  when: remove_original and  (not (convert_output.failed is defined and convert_output.failed))
+# - name: create output log file if failed for films
+#   lineinfile:
+#     path: "~/media_convert_films_output.txt"
+#     regexp: '^{{ item.path }}'
+#     line: "{{ item.path }}: NOK | {{ convert_output.stderr_lines[convert_output.stderr_lines | length - 2] }}"
+#     create: true
+#     mode: '0755'
+#     owner: '{{ ansible_user }}'
+#   when: (convert_output.failed is defined and convert_output.failed) and media_type == 'film'
+#   delegate_to: localhost
+
+# - name: create output log file if success for serie
+#   lineinfile:
+#     path: "~/media_convert_series_output.txt"
+#     regexp: '^{{ item.path }}'
+#     line: "{{ item.path }}: {{ serieName}} | {{ mediaFilename }} | {{ output_folder }}/{{ mediaFilename }}.mp4 | OK"
+#     create: true
+#     mode: '0755'
+#     owner: '{{ ansible_user }}'
+#   when: (not (convert_output.failed is defined and convert_output.failed)) and media_type == 'serie'
+#   delegate_to: localhost
+
+# - name: create output log file if failed for series
+#   lineinfile:
+#     path: "~/media_convert_series_output.txt"
+#     regexp: '^{{ item.path }}'
+#     line: "{{ item.path }}: NOK | {{ convert_output.stderr_lines[convert_output.stderr_lines | length - 1] }}"
+#     create: true
+#     mode: '0755'
+#     owner: '{{ ansible_user }}'
+#   when: (convert_output.failed is defined and convert_output.failed) and media_type == 'serie'
+#   delegate_to: localhost
+
+# - name: "remove original mediafile {{ item.path }}"
+#   ansible.builtin.file:
+#     path: "{{ item.path }}"
+#     state: absent
+#   when: remove_original and  (not (convert_output.failed is defined and convert_output.failed))
